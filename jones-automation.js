@@ -5,7 +5,8 @@
 
 const { chromium } = require('playwright');
 
-const URL = 'https://test.netlify.app/';
+const SITE_URL = 'https://test.netlify.app/';
+const EXPECTED_HEADING = 'Thank You!';
 
 const formData = {
   name: 'Nimrod Ryder',
@@ -13,6 +14,7 @@ const formData = {
   phone: '0501234567',
   company: 'Jones Automation',
   website: 'https://example.com', // type="url" field: must include the scheme
+  employees: '51-500',
 };
 
 (async () => {
@@ -20,7 +22,7 @@ const formData = {
   const page = await browser.newPage();
 
   try {
-    await page.goto(URL);
+    await page.goto(SITE_URL);
 
     // 1. Type values into the form fields
     await page.getByLabel('Name').fill(formData.name);
@@ -32,8 +34,12 @@ const formData = {
     // 2. Bonus: change Number of Employees from 1-10 to 51-500
     const employees = page.getByLabel('Number of Employees');
     console.log('Number of Employees before:', await employees.inputValue());
-    await employees.selectOption('51-500');
-    console.log('Number of Employees after:', await employees.inputValue());
+    await employees.selectOption(formData.employees);
+    const selected = await employees.inputValue();
+    if (selected !== formData.employees) {
+      throw new Error(`Number of Employees is "${selected}", expected "${formData.employees}"`);
+    }
+    console.log('Number of Employees after:', selected);
 
     // 3. Screenshot of the filled form, before clicking the button
     await page.screenshot({ path: 'before-click.png', fullPage: true });
@@ -42,9 +48,16 @@ const formData = {
     // 4. Click "Request a call back"
     await page.getByRole('button', { name: 'Request a call back' }).click();
 
-    // 5. Wait for the thank-you page and log it
+    // 5. Wait for the thank-you page, check it, and log it
     await page.waitForURL('**/thank-you.html**');
     const heading = (await page.locator('h1').textContent()).trim();
+    if (heading !== EXPECTED_HEADING) {
+      throw new Error(`Thank-you page heading is "${heading}", expected "${EXPECTED_HEADING}"`);
+    }
+    const submitted = new URL(page.url()).searchParams;
+    if (submitted.get('number_of_employees') !== formData.employees) {
+      throw new Error(`Submitted number_of_employees is "${submitted.get('number_of_employees')}"`);
+    }
     console.log('Reached the thank you page:', page.url());
     console.log('Page heading:', heading);
   } catch (error) {

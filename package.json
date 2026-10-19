@@ -4,11 +4,15 @@
   "description": "Jones Junior Automation Engineer exercise, part a (Playwright)",
   "main": "jones-automation.js",
   "scripts": {
-    "start": "node jones-automation.js"
+    "start": "node jones-automation.js",
+    "test": "mocha test/*.spec.js"
   },
   "author": "Nimrod Ryder",
   "license": "ISC",
   "dependencies": {
     "playwright": "1.56.1"
+  },
+  "devDependencies": {
+    "mocha": "^11.7.0"
   }
 }
